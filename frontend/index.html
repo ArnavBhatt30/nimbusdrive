@@ -714,9 +714,24 @@
             <h4>✦ AI Result — ${data.total_matches} ${matchText}</h4>
             <p>${data.explanation || 'Search complete.'}</p>
             ${data.results.length ? `
-              <p style="margin-top:8px;color:var(--text)">
-                Files: ${data.results.map(f => `<strong>${escapeHtml(f.filename)}</strong>`).join(', ')}
-              </p>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+                ${data.results.map(f => `
+                  <button onclick="downloadFile('${escapeHtml(f.filename)}')"
+                    style="display:flex;align-items:center;gap:8px;
+                           padding:8px 14px;border-radius:10px;
+                           background:rgba(110,231,247,0.08);
+                           border:1px solid rgba(110,231,247,0.2);
+                           color:var(--accent);font-family:'DM Sans',sans-serif;
+                           font-size:0.84rem;cursor:pointer;
+                           transition:background 0.15s,transform 0.15s;"
+                    onmouseover="this.style.background='rgba(110,231,247,0.15)';this.style.transform='translateY(-1px)'"
+                    onmouseout="this.style.background='rgba(110,231,247,0.08)';this.style.transform='none'">
+                    <span>${getIcon(f.filename)}</span>
+                    <span>${escapeHtml(f.filename)}</span>
+                    <span style="opacity:0.5;font-size:0.75rem;">↓</span>
+                  </button>
+                `).join('')}
+              </div>
             ` : ''}
           `;
         } else {
