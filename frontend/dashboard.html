@@ -308,6 +308,10 @@
           <button class="logout-btn" onclick="logout()">↩ Logout</button>
         </div>
 
+        <div style="display:flex;gap:8px;padding:4px 6px;">
+          <a href="https://github.com/ArnavBhatt30" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:var(--text2);font-size:0.75rem;text-decoration:none;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">🐙 GitHub</a>
+          <a href="https://www.linkedin.com/in/arnav-bhatt-0139b8172/" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:var(--text2);font-size:0.75rem;text-decoration:none;" onmouseover="this.style.borderColor='var(--accent2)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">💼 LinkedIn</a>
+        </div>
         <div class="theme-row">
           <span class="theme-label">Dark mode</span>
           <label class="toggle-switch">
@@ -325,9 +329,6 @@
       </div>
     </main>
   </div>
-
-  <!-- Lenis Smooth Scroll -->
-  <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
 
   <script>
     // API defined in auth.js
@@ -350,21 +351,6 @@
 
 
     // ============ LENIS SMOOTH SCROLL ============
-    const lenis = new Lenis({
-      duration: 0.6,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      direction: 'vertical',
-      gestureDirection: 'vertical',
-      smooth: true,
-      smoothTouch: false,
-      touchMultiplier: 2,
-    });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
 
     // ============ CUSTOM CURSOR ============
     const dot = document.getElementById('cursorDot');
