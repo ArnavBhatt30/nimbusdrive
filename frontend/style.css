@@ -3,7 +3,6 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  cursor: none !important;
 }
 
 :root {
@@ -1229,4 +1228,16 @@ body {
 }
 .logout-btn:hover {
   background: rgba(248,113,113,0.18);
+}
+
+/* ============ CURSOR: hide native when custom is active ============ */
+body:not(.native-cursor) {
+  cursor: none !important;
+}
+body:not(.native-cursor) * {
+  cursor: none !important;
+}
+body.native-cursor,
+body.native-cursor * {
+  cursor: auto !important;
 }

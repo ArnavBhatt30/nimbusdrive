@@ -10,9 +10,7 @@
   <link rel="stylesheet" href="style.css"/>
   <script src="auth.js"></script>
   <style>
-    html { scroll-behavior: smooth; }
-    *, *::before, *::after { cursor: none !important; }
-    .content { flex: 1; padding: 2.5rem; overflow-y: auto; scroll-behavior: smooth; }
+    .content { flex: 1; padding: 2.5rem; overflow-y: auto; }
 
     .page-header {
       display: flex;
@@ -331,8 +329,28 @@
     </main>
   </div>
 
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
   <script>
     // API defined in auth.js
+
+    // ============ LENIS SMOOTH SCROLL ============
+    const lenis = new Lenis({
+      duration: 0.6,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      direction: 'vertical',
+      gestureDirection: 'vertical',
+      smooth: true,
+      smoothTouch: false,
+      touchMultiplier: 2,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
 
     // ============ CUSTOM CURSOR ============
     const dot = document.getElementById('cursorDot');
@@ -342,11 +360,23 @@
 
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
+    // Apply cursor setting on load
+    (function() {
+      const s = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
+      if (s.customCursor === false || isTouchDevice) {
+        document.body.classList.add('native-cursor');
+        const d = document.getElementById('cursorDot');
+        const r = document.getElementById('cursorRing');
+        if (d) d.style.display = 'none';
+        if (r) r.style.display = 'none';
+      }
+    })();
+
     function initCursor() {
       if (isTouchDevice) {
         dot.style.display = 'none';
         ring.style.display = 'none';
-        // touch device — custom cursor hidden, native cursor also hidden via CSS
+        document.body.style.cursor = 'auto';
         return;
       }
 

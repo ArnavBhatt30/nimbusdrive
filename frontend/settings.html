@@ -333,7 +333,7 @@
       <nav class="nav-links">
         <a class="nav-link" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
         <a class="nav-link" href="index.html"><span class="nav-icon">📁</span> My Files</a>
-        <a class="nav-link" href="settings.html"><span class="nav-icon">🔐</span> Account</a>
+        <a class="nav-link" href="account.html"><span class="nav-icon">🔐</span> Account</a>
         <a class="nav-link active" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
       </nav>
       <div class="sidebar-bottom">
@@ -399,8 +399,20 @@
     // ===== CURSOR — lazy RAF, only runs when mouse moves =====
     const dot  = document.getElementById('cursorDot');
     const ring = document.getElementById('cursorRing');
+
+    // Apply cursor setting on load
+    const _initSettings = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
+    const _cursorEnabled = _initSettings.customCursor !== false;
+    if (!_cursorEnabled) {
+      if (dot)  dot.style.display  = 'none';
+      if (ring) ring.style.display = 'none';
+      document.body.classList.add('native-cursor');
+    }
+
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-      dot.style.display = ring.style.display = 'none';
+      if (dot)  dot.style.display = 'none';
+      if (ring) ring.style.display = 'none';
+      document.body.style.cursor = 'auto';
     } else {
       let rx = 0, ry = 0, mx = 0, my = 0, rafId = null;
       document.addEventListener('mousemove', e => {
@@ -449,6 +461,23 @@
       s[key] = value;
       localStorage.setItem('nimbusDriveSettings', JSON.stringify(s));
       showToast('Saved', 'success');
+
+      // Apply effects immediately
+      if (key === 'customCursor') applyCursorSetting(value);
+    }
+
+    function applyCursorSetting(enabled) {
+      const dot  = document.getElementById('cursorDot');
+      const ring = document.getElementById('cursorRing');
+      if (enabled) {
+        document.body.classList.remove('native-cursor');
+        if (dot)  { dot.style.display  = 'block'; dot.style.opacity  = '1'; }
+        if (ring) { ring.style.display = 'block'; ring.style.opacity = '0.6'; }
+      } else {
+        document.body.classList.add('native-cursor');
+        if (dot)  dot.style.display  = 'none';
+        if (ring) ring.style.display = 'none';
+      }
     }
 
     function saveProfile() {
@@ -470,8 +499,11 @@
 
     function resetSettings() {
       localStorage.removeItem('nimbusDriveSettings');
-      showToast('Settings reset', 'success');
-      setTimeout(renderSettings, 500);
+      showToast('Settings reset to defaults', 'success');
+      setTimeout(() => {
+        renderSettings();
+        applyCursorSetting(true); // default is enabled
+      }, 500);
     }
 
     async function clearAllFiles() {
