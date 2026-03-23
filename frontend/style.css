@@ -1230,7 +1230,8 @@ body {
   background: rgba(248,113,113,0.18);
 }
 
-/* ============ CURSOR: hide native when custom is active ============ */
+/* ============ CURSOR ============ */
+body.custom-cursor-active { cursor: none !important; }
 body:not(.native-cursor) {
   cursor: none !important;
 }

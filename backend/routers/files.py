@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, Header
+from fastapi import APIRouter, UploadFile, File, Header
 from services.s3_service import upload_file, list_files, delete_file, get_download_url
 from services.content_extractor import extract_text
 from services.database import save_content, delete_content
@@ -7,7 +7,6 @@ from routers.auth_router import get_current_user
 router = APIRouter(prefix="/files", tags=["Files"])
 
 def get_user_prefix(user: dict) -> str:
-    """Each user gets their own S3 folder: users/123/"""
     return f"users/{user['id']}/"
 
 @router.post("/upload")
@@ -31,12 +30,29 @@ def get_files(authorization: str = Header(None)):
     prefix = get_user_prefix(user)
     result = list_files(prefix=prefix)
 
-    # Strip the user prefix from filenames for display
     if result.get("success"):
         for f in result["files"]:
             f["filename"] = f["filename"].replace(prefix, "")
 
     return result
+
+@router.delete("/clear-all")
+def clear_all_files(authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    prefix = get_user_prefix(user)
+    result = list_files(prefix=prefix)
+
+    if not result.get("success"):
+        return {"success": False, "error": "Could not fetch files"}
+
+    deleted = 0
+    for f in result["files"]:
+        key = prefix + f["filename"].replace(prefix, "")
+        delete_file(key)
+        delete_content(key)
+        deleted += 1
+
+    return {"success": True, "deleted": deleted}
 
 @router.delete("/{filename}")
 def remove_file(filename: str, authorization: str = Header(None)):
@@ -47,6 +63,12 @@ def remove_file(filename: str, authorization: str = Header(None)):
 
 @router.get("/download/{filename}")
 def download_file(filename: str, authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    key = get_user_prefix(user) + filename
+    return get_download_url(key)
+
+@router.get("/preview/{filename}")
+def preview_file(filename: str, authorization: str = Header(None)):
     user = get_current_user(authorization)
     key = get_user_prefix(user) + filename
     return get_download_url(key)

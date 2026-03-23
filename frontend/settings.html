@@ -333,7 +333,6 @@
       <nav class="nav-links">
         <a class="nav-link" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
         <a class="nav-link" href="index.html"><span class="nav-icon">📁</span> My Files</a>
-        <a class="nav-link" href="account.html"><span class="nav-icon">🔐</span> Account</a>
         <a class="nav-link active" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
       </nav>
       <div class="sidebar-bottom">
@@ -406,7 +405,7 @@
     if (!_cursorEnabled) {
       if (dot)  dot.style.display  = 'none';
       if (ring) ring.style.display = 'none';
-      document.body.classList.add('native-cursor');
+      document.body.classList.remove('custom-cursor-active');
     }
 
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
@@ -470,11 +469,11 @@
       const dot  = document.getElementById('cursorDot');
       const ring = document.getElementById('cursorRing');
       if (enabled) {
-        document.body.classList.remove('native-cursor');
+        document.body.classList.add('custom-cursor-active');
         if (dot)  { dot.style.display  = 'block'; dot.style.opacity  = '1'; }
         if (ring) { ring.style.display = 'block'; ring.style.opacity = '0.6'; }
       } else {
-        document.body.classList.add('native-cursor');
+        document.body.classList.remove('custom-cursor-active');
         if (dot)  dot.style.display  = 'none';
         if (ring) ring.style.display = 'none';
       }
@@ -494,7 +493,41 @@
     function setAccent(el) {
       document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
       el.classList.add('active');
+
+      const color = el.dataset.accent;
+      const accents = {
+        cyan:   { accent: '#6ee7f7', accent2: '#a78bfa' },
+        purple: { accent: '#a78bfa', accent2: '#6ee7f7' },
+        pink:   { accent: '#f472b6', accent2: '#a78bfa' },
+        green:  { accent: '#4ade80', accent2: '#6ee7f7' },
+      };
+
+      const chosen = accents[color] || accents.cyan;
+      document.documentElement.style.setProperty('--accent',  chosen.accent);
+      document.documentElement.style.setProperty('--accent2', chosen.accent2);
+
+      // Save to localStorage
+      const s = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
+      s.accentColor = color;
+      localStorage.setItem('nimbusDriveSettings', JSON.stringify(s));
+
       showToast('Accent color updated', 'success');
+    }
+
+    function applyAccentColor() {
+      const s = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
+      if (!s.accentColor) return;
+      const accents = {
+        cyan:   { accent: '#6ee7f7', accent2: '#a78bfa' },
+        purple: { accent: '#a78bfa', accent2: '#6ee7f7' },
+        pink:   { accent: '#f472b6', accent2: '#a78bfa' },
+        green:  { accent: '#4ade80', accent2: '#6ee7f7' },
+      };
+      const chosen = accents[s.accentColor];
+      if (chosen) {
+        document.documentElement.style.setProperty('--accent',  chosen.accent);
+        document.documentElement.style.setProperty('--accent2', chosen.accent2);
+      }
     }
 
     function resetSettings() {
@@ -676,6 +709,7 @@
 
     // ===== INIT =====
     function init() {
+      applyAccentColor();
       initPageTransitions();
       renderSettings();
     }

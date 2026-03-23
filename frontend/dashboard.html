@@ -297,9 +297,6 @@
         <a class="nav-link" href="index.html">
           <span class="nav-icon">📁</span> My Files
         </a>
-        <a class="nav-link" href="account.html">
-          <span class="nav-icon">🔐</span> Account
-        </a>
         <a class="nav-link" href="settings.html">
           <span class="nav-icon">⚙️</span> Settings
         </a>
@@ -335,6 +332,23 @@
   <script>
     // API defined in auth.js
 
+    // ===== APPLY SAVED ACCENT COLOR =====
+    (function() {
+      const s = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
+      const accents = {
+        cyan:   { accent: '#6ee7f7', accent2: '#a78bfa' },
+        purple: { accent: '#a78bfa', accent2: '#6ee7f7' },
+        pink:   { accent: '#f472b6', accent2: '#a78bfa' },
+        green:  { accent: '#4ade80', accent2: '#6ee7f7' },
+      };
+      const chosen = accents[s.accentColor];
+      if (chosen) {
+        document.documentElement.style.setProperty('--accent',  chosen.accent);
+        document.documentElement.style.setProperty('--accent2', chosen.accent2);
+      }
+    })();
+
+
     // ============ LENIS SMOOTH SCROLL ============
     const lenis = new Lenis({
       duration: 0.6,
@@ -364,7 +378,7 @@
     (function() {
       const s = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
       if (s.customCursor === false || isTouchDevice) {
-        document.body.classList.add('native-cursor');
+        document.body.classList.remove('custom-cursor-active');
         const d = document.getElementById('cursorDot');
         const r = document.getElementById('cursorRing');
         if (d) d.style.display = 'none';
