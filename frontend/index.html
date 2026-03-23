@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NimbusDrive — Cloud Storage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"/>
+  <script src="auth.js"></script>
+</head>
+<body>
+  <!-- Theme Transition Overlay -->
+  <div class="theme-transition-overlay" id="themeOverlay"></div>
+
+  <!-- Background Orbs -->
+  <div class="bg-orbs">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+
+  <!-- Custom Cursor -->
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- Confetti Container -->
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+          <path d="M14 2C7.373 2 2 7.373 2 14s5.373 12 12 12 12-5.373 12-12S20.627 2 14 2z" fill="url(#lg1)"/>
+          <path d="M8 14l4 4 8-8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="lg1" x1="2" y1="2" x2="26" y2="26">
+              <stop offset="0%" stop-color="#6ee7f7"/>
+              <stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        NimbusDrive
+      </div>
+
+      <nav class="nav-links">
+        <a class="nav-link" href="dashboard.html">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a class="nav-link active" href="index.html">
+          <span class="nav-icon">📁</span> My Files
+        </a>
+        <a class="nav-link" href="account.html">
+          <span class="nav-icon">🔐</span> Account
+        </a>
+        <a class="nav-link" href="settings.html">
+          <span class="nav-icon">⚙️</span> Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="user-row">
+          <span class="theme-label" id="usernameDisplay">User</span>
+          <button class="logout-btn" onclick="logout()">↩ Logout</button>
+        </div>
+
+        <div class="theme-row">
+          <span class="theme-label">Dark mode</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="themeCheck" checked/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="storage-info">
+          <div class="storage-label-row">
+            <span class="theme-label">Storage</span>
+            <span class="theme-label" id="storageText">0 files</span>
+          </div>
+          <div class="storage-bar">
+            <div class="storage-fill" id="storageFill"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="page-wrap">
+      <main class="main">
+        <!-- Header Bar with Profile -->
+        <div class="header-bar">
+          <div class="header-left">
+            <h1 class="hero-title" style="font-size: 1.8rem; margin: 0;">
+              My <span class="gradient-text">Files</span>
+            </h1>
+          </div>
+          <div class="header-right">
+            <button class="refresh-btn" id="refreshBtn">
+              <span>↻</span> Refresh
+            </button>
+            <button class="profile-btn" onclick="window.location.href='settings.html'" title="Settings">
+              👤
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Search Section -->
+        <section class="search-section">
+          <div class="search-wrap">
+            <span class="search-icon">✦</span>
+            <input type="text" class="search-input" id="searchInput" placeholder="Ask AI to find your files..."/>
+            <button class="search-btn" id="searchBtn">Search</button>
+          </div>
+          <div class="ai-result hidden" id="aiResult"></div>
+        </section>
+
+        <!-- Filter Buttons -->
+        <div class="filter-section">
+          <button class="filter-btn active" data-filter="all">📁 All</button>
+          <button class="filter-btn" data-filter="images">🖼️ Images</button>
+          <button class="filter-btn" data-filter="documents">📄 Documents</button>
+          <button class="filter-btn" data-filter="videos">🎬 Videos</button>
+          <button class="filter-btn" data-filter="audio">🎵 Audio</button>
+          <button class="filter-btn" data-filter="code">💻 Code</button>
+        </div>
+
+        <!-- Upload Zone -->
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-icon-wrap">
+            <span style="font-size:1.8rem">☁️</span>
+          </div>
+          <p class="upload-title">Drop files here</p>
+          <p class="upload-sub">or <label class="upload-link" for="fileInput">browse</label> to upload</p>
+          <input type="file" id="fileInput" multiple hidden/>
+        </div>
+
+        <!-- Upload Progress -->
+        <div class="upload-progress hidden" id="uploadProgress">
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="progressBar"></div>
+          </div>
+          <span id="progressText">Uploading...</span>
+        </div>
+
+        <!-- Files Section -->
+        <section class="files-section">
+          <div class="files-header">
+            <h2 class="section-title">Your Files</h2>
+            <span id="fileCount" style="color: var(--text2); font-size: 0.85rem;">0 files</span>
+          </div>
+          <div class="files-grid" id="filesGrid">
+            <div class="empty-state">
+              <p>📂 No files yet. Upload something!</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+
+    // ============ PARTICLE BACKGROUND ============
+    function initParticles() {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'particleCanvas';
+      canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.4;';
+      document.body.prepend(canvas);
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animationId;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      class Particle {
+        constructor() { this.reset(); }
+        reset() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 2 + 0.5;
+          this.speedX = (Math.random() - 0.5) * 0.4;
+          this.speedY = (Math.random() - 0.5) * 0.4;
+          this.opacity = Math.random() * 0.6 + 0.1;
+          this.color = Math.random() > 0.5 ? '#6ee7f7' : '#a78bfa';
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+            this.reset();
+          }
+        }
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = this.opacity;
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+      function drawConnections() {
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 100) {
+              ctx.save();
+              ctx.globalAlpha = (1 - dist / 100) * 0.12;
+              ctx.strokeStyle = '#6ee7f7';
+              ctx.lineWidth = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        animationId = requestAnimationFrame(animate);
+      }
+      animate();
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) cancelAnimationFrame(animationId);
+        else animate();
+      });
+    }
+
+    // ============ CONFETTI ============
+    function createConfetti() {
+      const settings = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
+      if (settings.confetti === false) return;
+      
+      const container = document.getElementById('confettiContainer');
+      const colors = ['#6ee7f7', '#a78bfa', '#f472b6', '#4ade80', '#fbbf24'];
+      
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.cssText = `
+          left: ${Math.random() * 100}%;
+          background: ${colors[Math.floor(Math.random() * colors.length)]};
+          width: ${Math.random() * 10 + 5}px;
+          height: ${Math.random() * 10 + 5}px;
+          border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+          animation: confettiFall ${Math.random() * 2 + 2}s ease-out forwards;
+          animation-delay: ${Math.random() * 0.5}s;
+        `;
+        container.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 4000);
+      }
+    }
+
+    // Add confetti keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes confettiFall {
+        0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // ============ SOUND EFFECTS ============
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function playSound(type) {
+      const settings = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
+      if (settings.sound === false) return;
+      
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        if (type === 'upload') {
+          osc.frequency.setValueAtTime(523, now);
+          osc.frequency.setValueAtTime(659, now + 0.1);
+          osc.frequency.setValueAtTime(784, now + 0.2);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          osc.start();
+          osc.stop(now + 0.4);
+        } else if (type === 'delete') {
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.start();
+          osc.stop(now + 0.2);
+        } else if (type === 'click') {
+          osc.frequency.setValueAtTime(800, now);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.start();
+          osc.stop(now + 0.05);
+        }
+      } catch (e) {}
+    }
+
+    // ============ PAGE TRANSITIONS ============
+    function initPageTransitions() {
+      const overlay = document.createElement('div');
+      overlay.id = 'pageOverlay';
+      overlay.style.cssText = `
+        position:fixed;inset:0;z-index:99997;
+        background:linear-gradient(135deg,#6ee7f7,#a78bfa);
+        transform:translateX(-100%);
+        transition:transform 0.4s cubic-bezier(0.77,0,0.175,1);
+        pointer-events:none;
+      `;
+      document.body.appendChild(overlay);
+
+      document.querySelectorAll('a[href]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('javascript')) return;
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          playSound('click');
+          overlay.style.transform = 'translateX(0)';
+          setTimeout(() => { window.location.href = href; }, 400);
+        });
+      });
+
+      overlay.style.transform = 'translateX(0)';
+      overlay.style.transition = 'none';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          overlay.style.transition = 'transform 0.5s cubic-bezier(0.77,0,0.175,1)';
+          overlay.style.transform = 'translateX(100%)';
+        });
+      });
+    }
+
+    // ============ API CONFIG ============
+    // API defined in auth.js
+
+    // ============ SMOOTH THEME TOGGLE ============
+    const themeCheck = document.getElementById('themeCheck');
+    const themeOverlay = document.getElementById('themeOverlay');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+
+    // Apply saved theme instantly (no animation on load)
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeCheck.checked = savedTheme === 'dark';
+
+    function switchTheme(isDark) {
+      const theme = isDark ? 'dark' : 'light';
+      const overlayColor = isDark ? '#0a0a0f' : '#e3e1d6';
+      
+      // Show overlay
+      themeOverlay.style.background = overlayColor;
+      themeOverlay.classList.add('active');
+      
+      // Switch theme while overlay visible
+      setTimeout(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        
+        // Hide overlay
+        requestAnimationFrame(() => {
+          themeOverlay.classList.remove('active');
+        });
+        
+        playSound('click');
+        showToast(`${isDark ? '🌙 Dark' : '☀️ Light'} mode`, 'success');
+      }, 300);
+    }
+
+    themeCheck.addEventListener('change', () => switchTheme(themeCheck.checked));
+
+    // ============ TOAST ============
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const icons = { success: '✓', error: '✕', warning: '⚠' };
+      toast.innerHTML = `<span>${icons[type] || '•'}</span> ${msg}`;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => toast.className = 'toast', 3000);
+    }
+
+    // ============ FILE UTILITIES ============
+    const fileCategories = {
+      images: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'],
+      documents: ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'ppt', 'pptx'],
+      videos: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv'],
+      audio: ['mp3', 'wav', 'flac', 'ogg', 'aac', 'm4a'],
+      code: ['js', 'py', 'html', 'css', 'json', 'ts', 'jsx', 'tsx', 'php', 'java', 'c', 'cpp', 'rb', 'go', 'rs']
+    };
+
+    function getFileCategory(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      for (const [category, extensions] of Object.entries(fileCategories)) {
+        if (extensions.includes(ext)) return category;
+      }
+      return 'other';
+    }
+
+    function getIcon(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      const icons = {
+        pdf: '📄', jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️', svg: '🖼️',
+        mp4: '🎬', mov: '🎬', avi: '🎬', mkv: '🎬', webm: '🎬',
+        mp3: '🎵', wav: '🎵', flac: '🎵', ogg: '🎵',
+        zip: '🗜️', rar: '🗜️', '7z': '🗜️', tar: '🗜️', gz: '🗜️',
+        doc: '📝', docx: '📝', txt: '📃', md: '📃',
+        xls: '📊', xlsx: '📊', ppt: '📊', pptx: '📊',
+        js: '💻', py: '💻', html: '💻', css: '💻', json: '💻',
+        ts: '💻', jsx: '💻', tsx: '💻', php: '💻', java: '💻',
+      };
+      return icons[ext] || '📁';
+    }
+
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+      return (bytes / 1073741824).toFixed(1) + ' GB';
+    }
+
+    function isImageFile(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      return fileCategories.images.includes(ext);
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // ============ FILTER ============
+    let currentFilter = 'all';
+    let allFiles = [];
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderFiles(allFiles);
+        playSound('click');
+      });
+    });
+
+    // ============ LOAD FILES ============
+    async function loadFiles() {
+      const btn = document.getElementById('refreshBtn');
+      btn.classList.add('spinning');
+      try {
+        const res = await authFetch(`${API}/files/list`);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        allFiles = data.files || [];
+        renderFiles(allFiles);
+        updateStorage(allFiles);
+      } catch (e) {
+        console.error('Load files error:', e);
+        showToast('Could not connect to server', 'error');
+      } finally {
+        btn.classList.remove('spinning');
+      }
+    }
+
+    function updateStorage(files) {
+      const st = document.getElementById('storageText');
+      const fill = document.getElementById('storageFill');
+      const count = document.getElementById('fileCount');
+      
+      if (st) st.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
+      if (count) count.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
+      if (fill) {
+        const percentage = Math.min((files.length / 50) * 100, 100);
+        fill.style.width = percentage + '%';
+      }
+    }
+
+    function renderFiles(files) {
+      const grid = document.getElementById('filesGrid');
+      
+      let filteredFiles = files;
+      if (currentFilter !== 'all') {
+        filteredFiles = files.filter(f => getFileCategory(f.filename) === currentFilter);
+      }
+
+      if (!filteredFiles.length) {
+        grid.innerHTML = `<div class="empty-state"><p>📂 ${currentFilter === 'all' ? 'No files yet. Upload something!' : `No ${currentFilter} files found.`}</p></div>`;
+        return;
+      }
+      
+      grid.innerHTML = '';
+      filteredFiles.forEach((file, i) => {
+        const card = document.createElement('div');
+        card.className = 'file-card';
+        card.style.animationDelay = `${i * 0.05}s`;
+        const date = new Date(file.last_modified).toLocaleDateString('en-US', {
+          year: 'numeric', month: 'short', day: 'numeric'
+        });
+
+        const isImage = isImageFile(file.filename);
+        const previewHTML = isImage 
+          ? `<div class="img-preview-wrap">
+               <img class="img-preview" src="${API}/files/preview/${encodeURIComponent(file.filename)}" 
+                    alt="${escapeHtml(file.filename)}"
+                    onerror="this.parentElement.innerHTML='<div class=\\'file-icon-wrap\\'>${getIcon(file.filename)}</div>';">
+             </div>`
+          : `<div class="img-preview-wrap"><div class="file-icon-wrap">${getIcon(file.filename)}</div></div>`;
+
+        card.innerHTML = `
+          ${previewHTML}
+          <div class="file-name" title="${escapeHtml(file.filename)}">${escapeHtml(file.filename)}</div>
+          <div class="file-meta">${formatSize(file.size)} · ${date}</div>
+          <div class="file-actions">
+            <button class="btn-download" onclick="downloadFile('${escapeHtml(file.filename)}')" title="Download">↓</button>
+            <button class="btn-copy" onclick="copyFileLink('${escapeHtml(file.filename)}')" title="Copy Link">📋</button>
+            <button class="btn-delete" onclick="deleteFile('${escapeHtml(file.filename)}', this)" title="Delete">✕</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      setupHoverEffects();
+    }
+
+    // ============ UPLOAD FILE ============
+    async function uploadFile(file) {
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast('File too large! Max 50MB', 'error');
+        return;
+      }
+
+      const progress = document.getElementById('uploadProgress');
+      const bar = document.getElementById('progressBar');
+      const text = document.getElementById('progressText');
+
+      progress.classList.remove('hidden');
+      bar.style.width = '0%';
+      text.textContent = `Uploading ${file.name}...`;
+
+      let p = 0;
+      const interval = setInterval(() => {
+        p = Math.min(p + Math.random() * 15, 85);
+        bar.style.width = p + '%';
+      }, 200);
+
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await authFetch(`${API}/files/upload`, { method: 'POST', body: form });
+        const data = await res.json();
+
+        clearInterval(interval);
+        bar.style.width = '100%';
+        text.textContent = '✓ Uploaded!';
+
+        setTimeout(() => {
+          progress.classList.add('hidden');
+          bar.style.width = '0%';
+        }, 1500);
+
+        if (data.success) {
+          playSound('upload');
+          createConfetti();
+          showToast(`${file.name} uploaded!`, 'success');
+          loadFiles();
+        } else {
+          showToast(data.error || 'Upload failed', 'error');
+        }
+      } catch (e) {
+        clearInterval(interval);
+        progress.classList.add('hidden');
+        console.error('Upload error:', e);
+        showToast('Upload error: ' + e.message, 'error');
+      }
+    }
+
+    // ============ DOWNLOAD FILE ============
+    async function downloadFile(filename) {
+      try {
+        const res = await authFetch(`${API}/files/download/${encodeURIComponent(filename)}`);
+        const data = await res.json();
+        if (data.url) {
+          window.open(data.url, '_blank');
+          showToast(`Downloading ${filename}`, 'success');
+        } else {
+          showToast('Download failed', 'error');
+        }
+      } catch (e) {
+        console.error('Download error:', e);
+        showToast('Download failed', 'error');
+      }
+    }
+
+    // ============ COPY FILE LINK ============
+    async function copyFileLink(filename) {
+      try {
+        const res = await authFetch(`${API}/files/download/${encodeURIComponent(filename)}`);
+        const data = await res.json();
+        if (data.url) {
+          await navigator.clipboard.writeText(data.url);
+          showToast('Link copied!', 'success');
+          playSound('click');
+        }
+      } catch (e) {
+        console.error('Copy error:', e);
+        showToast('Could not copy link', 'error');
+      }
+    }
+
+    // ============ DELETE FILE ============
+    async function deleteFile(filename, btn) {
+      if (!confirm(`Delete "${filename}"?`)) return;
+
+      const card = btn.closest('.file-card');
+      card.style.transform = 'scale(0.9)';
+      card.style.opacity = '0.5';
+
+      playSound('delete');
+
+      try {
+        const res = await authFetch(`${API}/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+          card.style.transition = 'all 0.3s';
+          card.style.transform = 'scale(0)';
+          card.style.opacity = '0';
+          setTimeout(() => loadFiles(), 300);
+          showToast(`${filename} deleted`, 'success');
+        } else {
+          card.style.transform = '';
+          card.style.opacity = '';
+          showToast(data.error || 'Delete failed', 'error');
+        }
+      } catch (e) {
+        card.style.transform = '';
+        card.style.opacity = '';
+        console.error('Delete error:', e);
+        showToast('Delete failed', 'error');
+      }
+    }
+
+    // ============ AI SEARCH ============
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const input = document.getElementById('searchInput');
+      const query = input.value.trim();
+
+      if (!query) {
+        showToast('Please enter a search query', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('searchBtn');
+      const result = document.getElementById('aiResult');
+      const originalText = btn.textContent;
+
+      btn.textContent = 'Searching...';
+      btn.disabled = true;
+
+      try {
+        const res = await authFetch(`${API}/search/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+
+        const data = await res.json();
+        result.classList.remove('hidden');
+
+        if (data.success) {
+          const matchText = data.total_matches === 1 ? 'match' : 'matches';
+          result.innerHTML = `
+            <h4>✦ AI Result — ${data.total_matches} ${matchText}</h4>
+            <p>${data.explanation || 'Search complete.'}</p>
+            ${data.results.length ? `
+              <p style="margin-top:8px;color:var(--text)">
+                Files: ${data.results.map(f => `<strong>${escapeHtml(f.filename)}</strong>`).join(', ')}
+              </p>
+            ` : ''}
+          `;
+        } else {
+          result.innerHTML = `<h4>❌ Error</h4><p>${escapeHtml(data.error || 'Unknown error')}</p>`;
+        }
+      } catch (e) {
+        console.error('Search error:', e);
+        result.classList.remove('hidden');
+        result.innerHTML = `<h4>❌ Error</h4><p>Could not reach AI service.</p>`;
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('searchBtn').click();
+    });
+
+    // ============ DRAG AND DROP ============
+    const uploadZone = document.getElementById('uploadZone');
+
+    uploadZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length === 0) return;
+      files.forEach(uploadFile);
+    });
+
+    document.getElementById('fileInput').addEventListener('change', e => {
+      const files = Array.from(e.target.files);
+      files.forEach(uploadFile);
+      e.target.value = '';
+    });
+
+    uploadZone.addEventListener('click', e => {
+      if (e.target.tagName !== 'LABEL') {
+        document.getElementById('fileInput').click();
+      }
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      playSound('click');
+      loadFiles();
+    });
+
+    // ============ CUSTOM CURSOR ============
+    const dot = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mouseX = 0, mouseY = 0;
+    let ringX = 0, ringY = 0;
+
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    function initCursor() {
+      if (isTouchDevice) {
+        dot.style.display = 'none';
+        ring.style.display = 'none';
+        document.body.style.cursor = 'auto';
+        return;
+      }
+
+      dot.style.opacity = '1';
+      ring.style.opacity = '0.6';
+
+      document.addEventListener('mousemove', e => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        dot.style.left = mouseX + 'px';
+        dot.style.top = mouseY + 'px';
+      });
+
+      function animateRing() {
+        ringX += (mouseX - ringX) * 0.12;
+        ringY += (mouseY - ringY) * 0.12;
+        ring.style.left = ringX + 'px';
+        ring.style.top = ringY + 'px';
+        requestAnimationFrame(animateRing);
+      }
+      animateRing();
+
+      document.addEventListener('mousedown', () => {
+        dot.classList.add('clicking');
+        ring.classList.add('clicking');
+      });
+
+      document.addEventListener('mouseup', () => {
+        dot.classList.remove('clicking');
+        ring.classList.remove('clicking');
+      });
+
+      document.addEventListener('mouseleave', () => {
+        dot.style.opacity = '0';
+        ring.style.opacity = '0';
+      });
+
+      document.addEventListener('mouseenter', () => {
+        dot.style.opacity = '1';
+        ring.style.opacity = '0.6';
+      });
+
+      setupHoverEffects();
+    }
+
+    function setupHoverEffects() {
+      if (isTouchDevice) return;
+
+      const elements = document.querySelectorAll('a, button, label, input, textarea, select, .file-card, .nav-link, .upload-zone, .toggle-switch, .filter-btn, .profile-btn');
+
+      elements.forEach(el => {
+        el.removeEventListener('mouseenter', handleMouseEnter);
+        el.removeEventListener('mouseleave', handleMouseLeave);
+        el.addEventListener('mouseenter', handleMouseEnter);
+        el.addEventListener('mouseleave', handleMouseLeave);
+      });
+    }
+
+    function handleMouseEnter() {
+      dot?.classList.add('hovering');
+      ring?.classList.add('hovering');
+    }
+
+    function handleMouseLeave() {
+      dot?.classList.remove('hovering');
+      ring?.classList.remove('hovering');
+    }
+
+    // ============ KEYBOARD SHORTCUTS ============
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+        e.preventDefault();
+        document.getElementById('fileInput').click();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        loadFiles();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        themeCheck.checked = !themeCheck.checked;
+        switchTheme(themeCheck.checked);
+      }
+      if (e.key === 'Escape') {
+        document.getElementById('aiResult')?.classList.add('hidden');
+      }
+    });
+
+    // ============ INITIALIZE ============
+    document.addEventListener('DOMContentLoaded', () => {
+      // ── Auth check ──
+      requireAuth();
+      document.getElementById('usernameDisplay').textContent = getUsername();
+
+      initParticles();
+      initPageTransitions();
+      initCursor();
+      loadFiles();
+    });
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      requireAuth();
+      initParticles();
+      initPageTransitions();
+      initCursor();
+      loadFiles();
+    }
+  </script>
+</body>
+</html>

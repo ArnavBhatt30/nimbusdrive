@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NimbusDrive — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="auth.js"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+    *, *::before, *::after { cursor: none !important; }
+    .content { flex: 1; padding: 2.5rem; overflow-y: auto; scroll-behavior: smooth; }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.5s ease;
+    }
+    .page-header-left h1 { 
+      font-family: 'Syne', sans-serif; 
+      font-size: 2rem; 
+      font-weight: 800; 
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-header-left p { color: var(--text2); margin-top: 4px; font-size: 0.9rem; }
+
+    .go-files-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 99px;
+      padding: 12px 24px;
+      color: #0a0a0f;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .go-files-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 8px 30px rgba(110,231,247,0.3);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    .stat-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      animation: fadeUp 0.5s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(110,231,247,0.05), transparent 70%);
+      pointer-events: none;
+    }
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .stat-icon { font-size: 1.8rem; margin-bottom: 1rem; display: block; }
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stat-card:nth-child(1) .stat-value { color: var(--accent); }
+    .stat-card:nth-child(2) .stat-value { color: var(--accent2); }
+    .stat-card:nth-child(3) .stat-value { color: #f472b6; }
+
+    [data-theme="light"] .stat-card {
+      background: rgba(255, 252, 245, 0.5);
+      border-color: rgba(180, 175, 160, 0.35);
+    }
+    [data-theme="light"] .stat-card:nth-child(1) .stat-value { color: #0a9dad; }
+    [data-theme="light"] .stat-card:nth-child(2) .stat-value { color: #7359b8; }
+    [data-theme="light"] .stat-card:nth-child(3) .stat-value { color: #c94f8a; }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      animation: fadeUp 0.6s ease both;
+    }
+    [data-theme="light"] .chart-card {
+      background: rgba(255, 252, 245, 0.5);
+      border-color: rgba(180, 175, 160, 0.35);
+    }
+    .chart-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chart-title span { color: var(--accent); }
+    .chart-wrap { position: relative; height: 220px; }
+
+    .recent-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      animation: fadeUp 0.7s ease both;
+    }
+    [data-theme="light"] .recent-card {
+      background: rgba(255, 252, 245, 0.5);
+      border-color: rgba(180, 175, 160, 0.35);
+    }
+    .recent-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .recent-title span { color: var(--accent2); }
+
+    .recent-list { display: flex; flex-direction: column; gap: 8px; }
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--bg3);
+      animation: fadeUp 0.4s ease both;
+    }
+    .recent-item:hover {
+      transform: translateX(4px);
+      background: var(--glass-border);
+    }
+    [data-theme="light"] .recent-item {
+      background: #d8d6cb;
+    }
+    [data-theme="light"] .recent-item:hover {
+      background: #cac8bd;
+    }
+    .recent-file-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .recent-info { flex: 1; min-width: 0; }
+    .recent-name {
+      font-size: 0.88rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .recent-date { font-size: 0.75rem; color: var(--text2); margin-top: 2px; }
+    .recent-size { font-size: 0.78rem; color: var(--text2); flex-shrink: 0; }
+
+    .empty-chart {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 220px;
+      color: var(--text2);
+      font-size: 0.9rem;
+    }
+
+    .loading-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+    }
+    .loader {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--glass-border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg3);
+      border: 1px solid var(--glass-border);
+      border-radius: 99px;
+      padding: 12px 24px;
+      font-size: 0.9rem;
+      z-index: 99999;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+      backdrop-filter: blur(20px);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--success); color: var(--success); }
+    .toast.error { border-color: var(--danger); color: var(--danger); }
+
+    [data-theme="light"] .toast {
+      background: #eceae0;
+    }
+
+    @media (max-width: 768px) {
+      .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .go-files-btn { align-self: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme Transition Overlay -->
+  <div class="theme-transition-overlay" id="themeOverlay"></div>
+
+  <!-- Background Orbs -->
+  <div class="bg-orbs">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+
+  <!-- Custom Cursor -->
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+          <path d="M14 2C7.373 2 2 7.373 2 14s5.373 12 12 12 12-5.373 12-12S20.627 2 14 2z" fill="url(#lg2)"/>
+          <path d="M8 14l4 4 8-8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="lg2" x1="2" y1="2" x2="26" y2="26">
+              <stop offset="0%" stop-color="#6ee7f7"/>
+              <stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        NimbusDrive
+      </div>
+
+      <nav class="nav-links">
+        <a class="nav-link active" href="dashboard.html">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a class="nav-link" href="index.html">
+          <span class="nav-icon">📁</span> My Files
+        </a>
+        <a class="nav-link" href="account.html">
+          <span class="nav-icon">🔐</span> Account
+        </a>
+        <a class="nav-link" href="settings.html">
+          <span class="nav-icon">⚙️</span> Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="user-row">
+          <span class="theme-label" id="usernameDisplay">User</span>
+          <button class="logout-btn" onclick="logout()">↩ Logout</button>
+        </div>
+
+        <div class="theme-row">
+          <span class="theme-label">Dark mode</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="themeCheck" checked/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content" id="mainContent">
+      <div class="loading-state">
+        <div class="loader"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // API defined in auth.js
+
+    // ============ CUSTOM CURSOR ============
+    const dot = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mouseX = 0, mouseY = 0;
+    let ringX = 0, ringY = 0;
+
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    function initCursor() {
+      if (isTouchDevice) {
+        dot.style.display = 'none';
+        ring.style.display = 'none';
+        // touch device — custom cursor hidden, native cursor also hidden via CSS
+        return;
+      }
+
+      dot.style.opacity = '1';
+      ring.style.opacity = '0.6';
+
+      document.addEventListener('mousemove', e => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        dot.style.left = mouseX + 'px';
+        dot.style.top = mouseY + 'px';
+      });
+
+      function animateRing() {
+        ringX += (mouseX - ringX) * 0.12;
+        ringY += (mouseY - ringY) * 0.12;
+        ring.style.left = ringX + 'px';
+        ring.style.top = ringY + 'px';
+        requestAnimationFrame(animateRing);
+      }
+      animateRing();
+
+      document.addEventListener('mousedown', () => {
+        dot.classList.add('clicking');
+        ring.classList.add('clicking');
+      });
+
+      document.addEventListener('mouseup', () => {
+        dot.classList.remove('clicking');
+        ring.classList.remove('clicking');
+      });
+
+      document.addEventListener('mouseleave', () => {
+        dot.style.opacity = '0';
+        ring.style.opacity = '0';
+      });
+
+      document.addEventListener('mouseenter', () => {
+        dot.style.opacity = '1';
+        ring.style.opacity = '0.6';
+      });
+
+      setupHoverEffects();
+    }
+
+    function setupHoverEffects() {
+      if (isTouchDevice) return;
+
+      const elements = document.querySelectorAll('a, button, label, input, .nav-link, .stat-card, .recent-item, .chart-card, .go-files-btn, .toggle-switch');
+
+      elements.forEach(el => {
+        el.removeEventListener('mouseenter', handleMouseEnter);
+        el.removeEventListener('mouseleave', handleMouseLeave);
+        el.addEventListener('mouseenter', handleMouseEnter);
+        el.addEventListener('mouseleave', handleMouseLeave);
+      });
+    }
+
+    function handleMouseEnter() {
+      dot?.classList.add('hovering');
+      ring?.classList.add('hovering');
+    }
+
+    function handleMouseLeave() {
+      dot?.classList.remove('hovering');
+      ring?.classList.remove('hovering');
+    }
+
+    // Observer for dynamic content
+    const observer = new MutationObserver(() => setupHoverEffects());
+    observer.observe(document.getElementById('mainContent'), { childList: true, subtree: true });
+
+    // ============ TOAST ============
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const icons = { success: '✓', error: '✕', warning: '⚠' };
+      toast.innerHTML = `<span>${icons[type] || '•'}</span> ${msg}`;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => toast.className = 'toast', 3000);
+    }
+
+    // ============ SMOOTH THEME TOGGLE ============
+    const themeCheck = document.getElementById('themeCheck');
+    const themeOverlay = document.getElementById('themeOverlay');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeCheck.checked = savedTheme === 'dark';
+
+    function switchTheme(isDark) {
+      const theme = isDark ? 'dark' : 'light';
+      const overlayColor = isDark ? '#0a0a0f' : '#e3e1d6';
+      
+      themeOverlay.style.background = overlayColor;
+      themeOverlay.classList.add('active');
+      
+      setTimeout(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        
+        requestAnimationFrame(() => {
+          themeOverlay.classList.remove('active');
+        });
+        
+        showToast(`${isDark ? '🌙 Dark' : '☀️ Light'} mode`, 'success');
+      }, 300);
+    }
+
+    themeCheck.addEventListener('change', () => switchTheme(themeCheck.checked));
+
+    // ============ UTILITIES ============
+    function getIcon(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      const icons = {
+        pdf: '📄', jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️', svg: '🖼️',
+        mp4: '🎬', mov: '🎬', avi: '🎬', mkv: '🎬',
+        mp3: '🎵', wav: '🎵', flac: '🎵',
+        zip: '🗜️', rar: '🗜️', '7z': '🗜️',
+        doc: '📝', docx: '📝', xls: '📊', xlsx: '📊', ppt: '📊', pptx: '📊',
+        py: '💻', js: '💻', html: '💻', css: '💻', json: '💻',
+        txt: '📃', md: '📃'
+      };
+      return icons[ext] || '📁';
+    }
+
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+      return (bytes / 1073741824).toFixed(1) + ' GB';
+    }
+
+    function formatDate(str) {
+      return new Date(str).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // ============ PAGE TRANSITIONS ============
+    function initPageTransitions() {
+      const overlay = document.createElement('div');
+      overlay.id = 'pageOverlay';
+      overlay.style.cssText = `
+        position:fixed;inset:0;z-index:99997;
+        background:linear-gradient(135deg,#6ee7f7,#a78bfa);
+        transform:translateX(-100%);
+        transition:transform 0.4s cubic-bezier(0.77,0,0.175,1);
+        pointer-events:none;
+      `;
+      document.body.appendChild(overlay);
+
+      document.querySelectorAll('a[href]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('javascript')) return;
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          overlay.style.transform = 'translateX(0)';
+          setTimeout(() => { window.location.href = href; }, 400);
+        });
+      });
+
+      overlay.style.transform = 'translateX(0)';
+      overlay.style.transition = 'none';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          overlay.style.transition = 'transform 0.5s cubic-bezier(0.77,0,0.175,1)';
+          overlay.style.transform = 'translateX(100%)';
+        });
+      });
+    }
+
+    // ============ LOAD DASHBOARD ============
+    async function loadDashboard() {
+      try {
+        const res = await authFetch(`${API}/dashboard/stats`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderDashboard(data);
+      } catch (e) {
+        console.error('Dashboard load error:', e);
+        document.getElementById('mainContent').innerHTML = `
+          <div style="text-align:center;padding:4rem;color:var(--text2)">
+            <p style="font-size:3rem;margin-bottom:1rem">⚠️</p>
+            <p style="font-size:1.2rem;margin-bottom:0.5rem">Could not connect to backend</p>
+            <p style="font-size:0.85rem;margin-top:8px;opacity:0.7">Make sure uvicorn is running on port 8000</p>
+            <button onclick="loadDashboard()" style="
+              margin-top:1.5rem;
+              background: linear-gradient(135deg, var(--accent), var(--accent2));
+              border: none; border-radius: 99px;
+              padding: 10px 24px; color: #0a0a0f;
+              font-family: 'Syne', sans-serif; font-weight: 600;
+              cursor: pointer;
+            ">↻ Retry</button>
+          </div>`;
+      }
+    }
+
+    // ============ RENDER DASHBOARD (3 STAT CARDS - No Last Upload) ============
+    function renderDashboard(data) {
+      const breakdown = data.type_breakdown || {};
+      const recent = data.recent_uploads || [];
+      const largest = data.largest_files || [];
+      const typeCount = Object.keys(breakdown).length;
+
+      document.getElementById('mainContent').innerHTML = `
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1>📊 Dashboard</h1>
+            <p>Your cloud storage at a glance — ${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          </div>
+          <a href="index.html" class="go-files-btn">
+            📁 Go to My Files →
+          </a>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card" style="animation-delay:0s">
+            <span class="stat-icon">📁</span>
+            <div class="stat-value">${data.total_files}</div>
+            <div class="stat-label">Total Files</div>
+          </div>
+          <div class="stat-card" style="animation-delay:0.1s">
+            <span class="stat-icon">💾</span>
+            <div class="stat-value">${data.total_size_mb < 1 ? (data.total_size / 1024).toFixed(0) + ' KB' : data.total_size_mb + ' MB'}</div>
+            <div class="stat-label">Storage Used</div>
+          </div>
+          <div class="stat-card" style="animation-delay:0.2s">
+            <span class="stat-icon">🗂️</span>
+            <div class="stat-value">${typeCount}</div>
+            <div class="stat-label">File Types</div>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card" style="animation-delay:0.2s">
+            <div class="chart-title"><span>◈</span> File Type Breakdown</div>
+            ${typeCount === 0 ? '<div class="empty-chart">No files yet</div>' : '<div class="chart-wrap"><canvas id="typeChart"></canvas></div>'}
+          </div>
+          <div class="chart-card" style="animation-delay:0.3s">
+            <div class="chart-title"><span>◈</span> Largest Files</div>
+            ${largest.length === 0 ? '<div class="empty-chart">No files yet</div>' : '<div class="chart-wrap"><canvas id="sizeChart"></canvas></div>'}
+          </div>
+        </div>
+
+        <div class="recent-card" style="animation-delay:0.4s">
+          <div class="recent-title"><span>◈</span> Recent Uploads</div>
+          ${recent.length === 0
+            ? '<p style="color:var(--text2);text-align:center;padding:2rem">No uploads yet</p>'
+            : `<div class="recent-list">${recent.map((f, i) => `
+              <div class="recent-item" style="animation-delay:${i * 0.05}s">
+                <span class="recent-file-icon">${getIcon(f.filename)}</span>
+                <div class="recent-info">
+                  <div class="recent-name">${f.filename}</div>
+                  <div class="recent-date">${formatDate(f.last_modified)}</div>
+                </div>
+                <span class="recent-size">${formatSize(f.size)}</span>
+              </div>`).join('')}
+            </div>`
+          }
+        </div>
+      `;
+
+      // Type breakdown pie chart
+      if (typeCount > 0) {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const ctx = document.getElementById('typeChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(breakdown),
+            datasets: [{
+              data: Object.values(breakdown),
+              backgroundColor: ['#6ee7f7', '#a78bfa', '#f472b6', '#4ade80', '#fb923c', '#60a5fa', '#e879f9'],
+              borderWidth: 0,
+              hoverOffset: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  color: isDark ? '#8888aa' : '#6b6a62',
+                  padding: 16,
+                  font: { size: 12, family: 'DM Sans' }
+                }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+
+      // Largest files bar chart
+      if (largest.length > 0) {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const ctx2 = document.getElementById('sizeChart').getContext('2d');
+        new Chart(ctx2, {
+          type: 'bar',
+          data: {
+            labels: largest.map(f => f.filename.length > 12 ? f.filename.substring(0, 12) + '...' : f.filename),
+            datasets: [{
+              label: 'Size (KB)',
+              data: largest.map(f => (f.size / 1024).toFixed(1)),
+              backgroundColor: ['rgba(110,231,247,0.7)', 'rgba(167,139,250,0.7)', 'rgba(244,114,182,0.7)', 'rgba(74,222,128,0.7)', 'rgba(251,146,60,0.7)'],
+              borderRadius: 8,
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: isDark ? '#8888aa' : '#6b6a62', font: { size: 11 } }
+              },
+              y: {
+                grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                ticks: { color: isDark ? '#8888aa' : '#6b6a62', font: { size: 11 } }
+              }
+            }
+          }
+        });
+      }
+
+      setTimeout(setupHoverEffects, 100);
+    }
+
+    // ============ PARTICLES ============
+    function initParticles() {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'particleCanvas';
+      canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.3;';
+      document.body.prepend(canvas);
+
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animationId;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      class Particle {
+        constructor() { this.reset(); }
+        reset() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 2 + 0.5;
+          this.speedX = (Math.random() - 0.5) * 0.3;
+          this.speedY = (Math.random() - 0.5) * 0.3;
+          this.opacity = Math.random() * 0.5 + 0.1;
+          this.color = Math.random() > 0.5 ? '#6ee7f7' : '#a78bfa';
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+            this.reset();
+          }
+        }
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = this.opacity;
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      const particleCount = Math.min(60, Math.floor((canvas.width * canvas.height) / 25000));
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        animationId = requestAnimationFrame(animate);
+      }
+      animate();
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) cancelAnimationFrame(animationId);
+        else animate();
+      });
+    }
+
+    // ============ KEYBOARD SHORTCUTS ============
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        themeCheck.checked = !themeCheck.checked;
+        switchTheme(themeCheck.checked);
+      }
+    });
+
+    // ============ INITIALIZE ============
+    document.addEventListener('DOMContentLoaded', () => {
+      // ── Auth check ──
+      requireAuth();
+      document.getElementById('usernameDisplay').textContent = getUsername();
+
+      initParticles();
+      initPageTransitions();
+      initCursor();
+      loadDashboard();
+    });
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      requireAuth();
+      initParticles();
+      initPageTransitions();
+      initCursor();
+      loadDashboard();
+    }
+  </script>
+</body>
+</html>

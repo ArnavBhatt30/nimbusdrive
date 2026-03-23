@@ -1,0 +1,52 @@
+from fastapi import APIRouter, UploadFile, File, Depends, Header
+from services.s3_service import upload_file, list_files, delete_file, get_download_url
+from services.content_extractor import extract_text
+from services.database import save_content, delete_content
+from routers.auth_router import get_current_user
+
+router = APIRouter(prefix="/files", tags=["Files"])
+
+def get_user_prefix(user: dict) -> str:
+    """Each user gets their own S3 folder: users/123/"""
+    return f"users/{user['id']}/"
+
+@router.post("/upload")
+async def upload(file: UploadFile = File(...), authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    file_bytes = await file.read()
+    key = get_user_prefix(user) + file.filename
+
+    result = upload_file(file_bytes, key, file.content_type)
+
+    if result.get("success"):
+        content = extract_text(file_bytes, file.filename)
+        if content.strip():
+            save_content(key, content)
+
+    return result
+
+@router.get("/list")
+def get_files(authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    prefix = get_user_prefix(user)
+    result = list_files(prefix=prefix)
+
+    # Strip the user prefix from filenames for display
+    if result.get("success"):
+        for f in result["files"]:
+            f["filename"] = f["filename"].replace(prefix, "")
+
+    return result
+
+@router.delete("/{filename}")
+def remove_file(filename: str, authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    key = get_user_prefix(user) + filename
+    delete_content(key)
+    return delete_file(key)
+
+@router.get("/download/{filename}")
+def download_file(filename: str, authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    key = get_user_prefix(user) + filename
+    return get_download_url(key)
