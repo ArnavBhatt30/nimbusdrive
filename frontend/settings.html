@@ -406,10 +406,11 @@
     // Apply cursor setting on load
     const _initSettings = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
     const _cursorEnabled = _initSettings.customCursor !== false;
-    if (!_cursorEnabled) {
+    if (_cursorEnabled && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
+      document.body.classList.add('custom-cursor-active');
+    } else {
       if (dot)  dot.style.display  = 'none';
       if (ring) ring.style.display = 'none';
-      document.body.classList.remove('custom-cursor-active');
     }
 
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {

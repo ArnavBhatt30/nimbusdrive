@@ -362,6 +362,19 @@
 
     // Apply cursor setting on load
     (function() {
+      const _s = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
+      const _d = document.getElementById('cursorDot');
+      const _r = document.getElementById('cursorRing');
+      if (_s.customCursor !== false && !isTouchDevice) {
+        document.body.classList.add('custom-cursor-active');
+      } else {
+        if (_d) _d.style.display = 'none';
+        if (_r) _r.style.display = 'none';
+      }
+    })();
+
+    // Apply cursor setting on load
+    (function() {
       const s = JSON.parse(localStorage.getItem('nimbusDriveSettings') || '{}');
       if (s.customCursor === false || isTouchDevice) {
         document.body.classList.remove('custom-cursor-active');
